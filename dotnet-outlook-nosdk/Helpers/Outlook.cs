@@ -1,0 +1,96 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Net.Http;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+
+using dotnet_outlook_nosdk.Models;
+
+namespace dotnet_outlook_nosdk.Helpers
+{
+  public class Outlook
+  {
+    // Used to set the base API endpoint, e.g. "https://outlook.office.com/api/beta"
+    public string apiEndpoint { get; set; }
+    public string anchorMailbox { get; set; }
+
+    public Outlook()
+    {
+      // Set default endpoint
+      apiEndpoint = "https://outlook.office.com/api/beta";
+      anchorMailbox = string.Empty;
+    }
+
+    public async Task<HttpResponseMessage> MakeApiCall(string method, string token, string apiUrl, string userEmail, string payload)
+    {
+      using (var httpClient = new HttpClient())
+      {
+        var request = new HttpRequestMessage(new HttpMethod(method), apiUrl);
+
+        // Headers
+        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        request.Headers.UserAgent.Add(new System.Net.Http.Headers.ProductInfoHeaderValue("dotnet-outlook-nosdk", "1.0"));
+        request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+        request.Headers.Add("client-request-id", Guid.NewGuid().ToString());
+        request.Headers.Add("return-client-request-id", "true");
+        request.Headers.Add("X-AnchorMailbox", userEmail);
+
+        // Content
+        if ((method.ToUpper() == "POST" || method.ToUpper() == "PATCH") &&
+            !string.IsNullOrEmpty(payload))
+        {
+          request.Content = new StringContent(payload);
+          request.Content.Headers.ContentType.MediaType = "application/json";
+        }
+
+        var apiResult = await httpClient.SendAsync(request);
+        return apiResult;
+      }
+    }
+
+    public async Task<object> GetCalendarView(string token, string userEmail, DateTime viewStart, DateTime viewEnd)
+    {
+      string getCalendarViewEndpoint = this.apiEndpoint + "/Me/CalendarView";
+      string query = "?startdatetime={0}&enddatetime={1}&$orderby=Start/DateTime&$select=Subject,Organizer,Start,End,Location,WebLink";
+      getCalendarViewEndpoint += string.Format(query, viewStart.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"), viewEnd.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"));
+
+      var result = await MakeApiCall("GET", token, getCalendarViewEndpoint, userEmail, null);
+
+      var response = await result.Content.ReadAsStringAsync();
+
+      // The response looks like:
+      // {
+      //   @odata.context = "...",
+      //   @odata.nextLink = "...",
+      //   value: [
+      //     {
+      //       <Event 1>
+      //     },
+      //     {
+      //       <Event 2>
+      //     },
+      //     ...
+      //   ]
+
+      // Use Json.Net's LINQ functions to get to the "value", which is an array
+      // Then we can use LINQ to deserialize to the OutlookEvent class
+
+      JObject responseJson = JObject.Parse(response);
+      JArray eventJson = (JArray)responseJson["value"];
+
+      List<OutlookEvent> events = eventJson.Select(e => new OutlookEvent
+      {
+        Subject = (string)e["Subject"],
+        Organizer = (string)e["Organizer"]["EmailAddress"]["Name"],
+        Start = DateTime.Parse((string)e["Start"]["DateTime"]),
+        End = DateTime.Parse((string)e["End"]["DateTime"]),
+        Location = (string)e["Location"]["DisplayName"],
+        WebLink = (string)e["WebLink"]
+      }).ToList();
+        
+      return events;
+    }
+  }
+}

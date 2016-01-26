@@ -1,0 +1,20 @@
+﻿@{
+  ViewData["Title"] = "Home Page";
+}
+
+<div class="jumbotron">
+    <h1>Outlook REST API SDK-less Sample</h1>
+    <p class="lead">This sample uses ADAL to authenticate the user using the v2 app model. Instead of using an SDK to implement the Outlook API, it sends HTTP requests.</p>
+    @if (ViewBag.Message != null)
+    {
+    <p class="alert">@ViewBag.Message</p>
+    }
+    @if (ViewBag.LoginUri != null)
+    {
+    <p><a class="btn btn-primary btn-lg" href="@ViewBag.LoginUri.ToString()">Click here to login</a></p>
+    }
+    else
+    {
+    <p>Hello @ViewBag.UserName!</p>
+    }
+</div>
