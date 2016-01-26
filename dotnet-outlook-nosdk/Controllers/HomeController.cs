@@ -64,6 +64,14 @@ namespace dotnet_outlook_nosdk.Controllers
     public async Task<ActionResult> Authorize()
     {
       string authCode = Request.Params["code"];
+      if (string.IsNullOrEmpty(authCode))
+      {
+        string error = Request.Params["error"];
+        string error_description = Request.Params["error_description"];
+
+        TempData["error_message"] = string.Format("Error: {0} - {1}", error, error_description);
+        return RedirectToAction("Error");
+      }
 
       AuthenticationContext authContext = new AuthenticationContext(authority);
 
