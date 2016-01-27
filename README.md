@@ -24,7 +24,7 @@ I have not tested this project with Visual Studio 2013.
         <add key="ida:ClientID" value="YOUR APP ID HERE" />
         <add key="ida:ClientSecret" value="YOUR APP SECRET HERE" />
         
-  Replace the values with the app ID and app secret generatd in the previous step.
+  Replace the values with the app ID and app secret generated in the previous step.
 
 1. Press **F5** to run the sample.
 
