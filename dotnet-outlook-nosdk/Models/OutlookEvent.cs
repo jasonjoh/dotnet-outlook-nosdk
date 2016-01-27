@@ -13,5 +13,6 @@ namespace dotnet_outlook_nosdk.Models
     public DateTime End { get; set; }
     public string Location { get; set; }
     public string WebLink { get; set; }
+    public string OnlineMeetingUrl { get; set; }
   }
 }

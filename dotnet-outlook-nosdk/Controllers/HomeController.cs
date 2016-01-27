@@ -123,6 +123,7 @@ namespace dotnet_outlook_nosdk.Controllers
 
       var client = new Outlook();
       client.anchorMailbox = GetUserEmail(authContext, appId);
+      ViewBag.UserName = client.anchorMailbox;
 
       DateTime viewStart = DateTime.Now.Date.ToUniversalTime();
       DateTime viewEnd = viewStart.AddDays(7);

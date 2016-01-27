@@ -35,7 +35,7 @@
             @Html.DisplayFor(modelItem => item.Organizer)
         </td>
         <td>
-            @Html.DisplayFor(modelItem => item.Subject)
+            <a href="@item.WebLink">@Html.DisplayFor(modelItem => item.Subject)</a>
         </td>
         <td>
             @Html.DisplayFor(modelItem => item.Start)
@@ -47,7 +47,10 @@
             @Html.DisplayFor(modelItem => item.Location)
         </td>
         <td>
-            <a target="_blank" href="@item.WebLink">Details</a>
+            @if (!string.IsNullOrEmpty(item.OnlineMeetingUrl))
+            {
+              <a target="_blank" href="@item.OnlineMeetingUrl">Join Meeting Online</a>
+            }
         </td>
     </tr>
 }
