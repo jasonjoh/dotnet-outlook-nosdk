@@ -23,7 +23,7 @@ namespace dotnet_outlook_nosdk.Helpers
       anchorMailbox = string.Empty;
     }
 
-    public async Task<HttpResponseMessage> MakeApiCall(string method, string token, string apiUrl, string userEmail, string payload)
+    public async Task<HttpResponseMessage> MakeApiCall(string method, string token, string apiUrl, string userEmail, string payload, Dictionary<string, string> preferHeaders)
     {
       using (var httpClient = new HttpClient())
       {
@@ -36,6 +36,14 @@ namespace dotnet_outlook_nosdk.Helpers
         request.Headers.Add("client-request-id", Guid.NewGuid().ToString());
         request.Headers.Add("return-client-request-id", "true");
         request.Headers.Add("X-AnchorMailbox", userEmail);
+        
+        if (preferHeaders != null)
+        {
+          foreach(KeyValuePair<string, string> header in preferHeaders)
+          {
+            request.Headers.Add("Prefer", string.Format("{0}=\"{1}\"", header.Key, header.Value));
+          }
+        }
 
         // Content
         if ((method.ToUpper() == "POST" || method.ToUpper() == "PATCH") &&
@@ -53,10 +61,13 @@ namespace dotnet_outlook_nosdk.Helpers
     public async Task<object> GetCalendarView(string token, string userEmail, DateTime viewStart, DateTime viewEnd)
     {
       string getCalendarViewEndpoint = this.apiEndpoint + "/Me/CalendarView";
-      string query = "?startdatetime={0}&enddatetime={1}&$orderby=Start/DateTime&$select=Subject,Organizer,Start,End,Location,WebLink";
+      string query = "?startdatetime={0}&enddatetime={1}&$orderby=Start/DateTime&$select=Subject,Organizer,Start,End,Location,WebLink,OnlineMeetingUrl";
       getCalendarViewEndpoint += string.Format(query, viewStart.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"), viewEnd.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"));
 
-      var result = await MakeApiCall("GET", token, getCalendarViewEndpoint, userEmail, null);
+      Dictionary<string, string> preferences = new Dictionary<string, string>();
+      preferences.Add("exchange.behavior", "onlinemeeting");
+
+      var result = await MakeApiCall("GET", token, getCalendarViewEndpoint, userEmail, null, preferences);
 
       var response = await result.Content.ReadAsStringAsync();
 
@@ -87,7 +98,8 @@ namespace dotnet_outlook_nosdk.Helpers
         Start = DateTime.Parse((string)e["Start"]["DateTime"]),
         End = DateTime.Parse((string)e["End"]["DateTime"]),
         Location = (string)e["Location"]["DisplayName"],
-        WebLink = (string)e["WebLink"]
+        WebLink = (string)e["WebLink"],
+        OnlineMeetingUrl = (string)e["OnlineMeetingUrl"]
       }).ToList();
         
       return events;
