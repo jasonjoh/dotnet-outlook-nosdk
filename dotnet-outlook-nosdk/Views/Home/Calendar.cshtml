@@ -24,7 +24,16 @@
             @Html.DisplayNameFor(model => model.End)
         </th>
         <th>
-            @Html.DisplayNameFor(model => model.Location)
+            @Html.DisplayNameFor(model => model.LocationDisplayName)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.LocationAddress)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.LocationCoordinates)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.OnlineMeetingUrl)
         </th>
         <th></th>
     </tr>
@@ -44,7 +53,19 @@
             @Html.DisplayFor(modelItem => item.End)
         </td>
         <td>
-            @Html.DisplayFor(modelItem => item.Location)
+            @Html.DisplayFor(modelItem => item.LocationDisplayName)
+        </td>
+        <td>
+            @if (!string.IsNullOrEmpty(item.LocationAddress))
+            {
+                @Html.DisplayFor(modelItem => item.LocationAddress)
+            }
+        </td>
+        <td>
+            @if (!string.IsNullOrEmpty(item.LocationCoordinates))
+            {
+                @Html.DisplayFor(modelItem => item.LocationCoordinates)
+            }
         </td>
         <td>
             @if (!string.IsNullOrEmpty(item.OnlineMeetingUrl))
