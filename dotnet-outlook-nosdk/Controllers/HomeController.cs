@@ -126,7 +126,7 @@ namespace dotnet_outlook_nosdk.Controllers
       ViewBag.UserName = client.anchorMailbox;
 
       DateTime viewStart = DateTime.Now.Date.ToUniversalTime();
-      DateTime viewEnd = viewStart.AddDays(7);
+      DateTime viewEnd = viewStart.AddHours(3);
       var result = await client.GetCalendarView(authResult.Token, client.anchorMailbox, viewStart, viewEnd);
 
       return View(result);
