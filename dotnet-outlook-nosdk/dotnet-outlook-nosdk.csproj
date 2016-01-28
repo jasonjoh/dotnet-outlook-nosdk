@@ -53,14 +53,6 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="Microsoft.Experimental.IdentityModel.Clients.ActiveDirectory, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Experimental.IdentityModel.Clients.ActiveDirectory.4.0.209160138-alpha\lib\net45\Microsoft.Experimental.IdentityModel.Clients.ActiveDirectory.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Microsoft.Experimental.IdentityModel.Clients.ActiveDirectory.Platform, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Experimental.IdentityModel.Clients.ActiveDirectory.4.0.209160138-alpha\lib\net45\Microsoft.Experimental.IdentityModel.Clients.ActiveDirectory.Platform.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="Newtonsoft.Json, Version=8.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.8.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
@@ -131,7 +123,11 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
+    <Compile Include="Helpers\OAuthHelper.cs" />
+    <Compile Include="Helpers\OpenIdToken.cs" />
     <Compile Include="Helpers\Outlook.cs" />
+    <Compile Include="Helpers\TokenCache.cs" />
+    <Compile Include="Helpers\TokenRequestResponses.cs" />
     <Compile Include="Models\OutlookEvent.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

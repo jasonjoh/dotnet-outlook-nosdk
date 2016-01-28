@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Linq;
 using System.Threading.Tasks;
 using System.Web.Mvc;
-using Microsoft.Experimental.IdentityModel.Clients.ActiveDirectory;
 
 using dotnet_outlook_nosdk.Helpers;
 
@@ -22,66 +20,100 @@ namespace dotnet_outlook_nosdk.Controllers
 
     public async Task<ActionResult> Index()
     {
-
-      // By using this version of the AuthenticationContext constructor,
-      // we are using the default in-memory token cache. In a real app, you would
-      // want to provide an implementation of TokenCache that saves the data somewhere
-      // so that you could persist it if restarting the app, etc.
-      AuthenticationContext authContext = new AuthenticationContext(authority);
-
-      ClientCredential credential = new ClientCredential(appId, appSecret);
-      AuthenticationResult authResult = null;
-
+      // If any message was returned, add it to the ViewBag
       ViewBag.Message = TempData["message"];
 
-      try
+      string redirectUri = Url.Action("Authorize", "Home", null, Request.Url.Scheme);
+      OAuthHelper oauthHelper = new OAuthHelper(authority, appId, appSecret);
+      if (Session["user_name"] != null && Session["user_id"] != null)
       {
-        authResult = await authContext.AcquireTokenSilentAsync(scopes, credential, UserIdentifier.AnyUser);
+        // Make sure token is still good
+        try
+        {
+          string token = await oauthHelper.GetAccessToken((string)Session["user_id"], redirectUri);
 
-        ViewBag.UserName = GetUserEmail(authContext, appId);
-      }
-      catch (AdalException ex)
-      {
-        if (ex.ErrorCode == "failed_to_acquire_token_silently")
-        {
-          // We don't have a token in the cache OR the token couldn't be refreshed
-          // We need to have the user sign in
-          Uri redirectUri = new Uri(Url.Action("Authorize", "Home", null, Request.Url.Scheme));
-          ViewBag.LoginUri = await authContext.GetAuthorizationRequestUrlAsync(scopes, null, appId, redirectUri, UserIdentifier.AnyUser, null);
+          if (!string.IsNullOrEmpty(token))
+          {
+            ViewBag.UserName = (string)Session["user_name"];
+            return View();
+          }
         }
-        else
+        catch (Exception)
         {
-          TempData["error_message"] = ex.Message;
-          RedirectToAction("Error");
+          // Clear session and have user login again
+          Session.Remove("user_name");
+          Session.Remove("user_id");
         }
       }
+
+      // We don't have a token in the cache OR the token couldn't be refreshed
+      // We need to have the user sign in
+        
+      string state = Guid.NewGuid().ToString();
+      string nonce = Guid.NewGuid().ToString();
+      Session["auth_state"] = state;
+      Session["auth_nonce"] = nonce;
+
+      ViewBag.LoginUri = oauthHelper.GetAuthorizationUrl(scopes, redirectUri, state, nonce);
 
       return View();
     }
 
     public async Task<ActionResult> Authorize()
     {
+      string authState = Request.Params["state"];
+      string expectedState = (string)Session["auth_state"];
+      Session.Remove("auth_state");
+
+      // Make sure that the state passed by the caller matches what we expect
+      if (!authState.Equals(expectedState))
+      {
+        TempData["error_message"] = "The auth state did not match the expected value. Please try again.";
+        return RedirectToAction("Error");
+      }
+
       string authCode = Request.Params["code"];
-      if (string.IsNullOrEmpty(authCode))
+      string idToken = Request.Params["id_token"];
+
+      // Make sure we got back an auth code and ID token
+      if (string.IsNullOrEmpty(authCode) || string.IsNullOrEmpty(idToken))
       {
         string error = Request.Params["error"];
         string error_description = Request.Params["error_description"];
 
-        TempData["error_message"] = string.Format("Error: {0} - {1}", error, error_description);
+        if (string.IsNullOrEmpty(error) && string.IsNullOrEmpty(error_description))
+        {
+          TempData["error_message"] = "Missing authorization code and/or ID token from redirect.";
+        }
+        else
+        {
+          TempData["error_message"] = string.Format("Error: {0} - {1}", error, error_description);
+        }
+
         return RedirectToAction("Error");
       }
 
-      AuthenticationContext authContext = new AuthenticationContext(authority);
+      // Check the nonce in the ID token against what we expect
+      string nonce = (string)Session["auth_nonce"];
+      Session.Remove("auth_nonce");
+      if (!OpenIdToken.ValidateOpenIdToken(idToken, nonce))
+      {
+        TempData["error_message"] = "Invalid ID token.";
+        return RedirectToAction("Error");
+      }
 
-      ClientCredential credential = new ClientCredential(appId, appSecret);
-      AuthenticationResult authResult = null;
-      Uri redirectUri = new Uri(Url.Action("Authorize", "Home", null, Request.Url.Scheme));
+      OpenIdToken userId = OpenIdToken.ParseOpenIdToken(idToken);
 
+      OAuthHelper oauthHelper = new OAuthHelper(authority, appId, appSecret);
+      string redirectUri = Url.Action("Authorize", "Home", null, Request.Url.Scheme);
       try
       {
-        authResult = await authContext.AcquireTokenByAuthorizationCodeAsync(authCode, redirectUri, credential, scopes);
+        TokenRequestSuccessResponse response = await oauthHelper.GetTokensFromAuthority("authorization_code", authCode, redirectUri, userId.oid);
+
+        Session["user_name"] = GetEmailFromIdToken(response.id_token);
+        Session["user_id"] = userId.oid;
       }
-      catch (AdalException ex)
+      catch (Exception ex)
       {
         TempData["error_message"] = ex.Message;
         return RedirectToAction("Error");
@@ -92,8 +124,12 @@ namespace dotnet_outlook_nosdk.Controllers
 
     public ActionResult Logout()
     {
-      AuthenticationContext authContext = new AuthenticationContext(authority);
-      authContext.TokenCache.Clear();
+      OAuthHelper oauthHelper = new OAuthHelper(authority, appId, appSecret);
+      oauthHelper.LogOut((string)Session["user_id"]);
+
+      Session.Remove("user_name");
+      Session.Remove("user_id");
+
       return Redirect("/");
     }
 
@@ -105,27 +141,30 @@ namespace dotnet_outlook_nosdk.Controllers
 
     public async Task<ActionResult> Calendar()
     {
-      AuthenticationContext authContext = new AuthenticationContext(authority);
-
-      ClientCredential credential = new ClientCredential(appId, appSecret);
-      AuthenticationResult authResult = null;
-      try
+      string userId = (string)Session["user_id"];
+      if (string.IsNullOrEmpty(userId))
       {
-        authResult = await authContext.AcquireTokenSilentAsync(scopes, credential, UserIdentifier.AnyUser);
+        TempData["message"] = "Please sign in to continue";
+        return Redirect("/");
       }
-      catch (AdalException ex)
+
+      OAuthHelper oauthHelper = new OAuthHelper(authority, appId, appSecret);
+      string redirectUri = Url.Action("Authorize", "Home", null, Request.Url.Scheme);
+
+      string accessToken = await oauthHelper.GetAccessToken(userId, redirectUri);
+      if (string.IsNullOrEmpty(accessToken))
       {
         TempData["message"] = "Please sign in to continue";
         return Redirect("/");
       }
 
       var client = new Outlook();
-      client.anchorMailbox = GetUserEmail(authContext, appId);
+      client.anchorMailbox = (string)Session["user_name"];
       ViewBag.UserName = client.anchorMailbox;
 
       DateTime viewStart = DateTime.Now.ToUniversalTime();
       DateTime viewEnd = viewStart.AddHours(3);
-      var result = await client.GetCalendarView(authResult.Token, client.anchorMailbox, viewStart, viewEnd);
+      var result = await client.GetCalendarView(accessToken, client.anchorMailbox, viewStart, viewEnd);
 
       return View(result);
     }
@@ -140,19 +179,6 @@ namespace dotnet_outlook_nosdk.Controllers
     {
       ViewBag.ErrorMessage = TempData["error_message"];
       return View();
-    }
-
-    private string GetUserEmail(AuthenticationContext context, string clientId)
-    {
-      // ADAL caches the ID token in its token cache by the client ID
-      foreach (TokenCacheItem item in context.TokenCache.ReadItems())
-      {
-        if (item.Scope.Contains(clientId))
-        {
-          return GetEmailFromIdToken(item.Token);
-        }
-      }
-      return string.Empty;
     }
 
     private string GetEmailFromIdToken(string token)

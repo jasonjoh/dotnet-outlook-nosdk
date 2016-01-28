@@ -4,10 +4,10 @@
 
 <div class="jumbotron">
     <h1>Outlook REST API SDK-less Sample</h1>
-    <p class="lead">This sample uses ADAL to authenticate the user using the v2 app model. Instead of using an SDK to implement the Outlook API, it sends HTTP requests.</p>
+    <p class="lead">This sample uses OAuth 2.0 to authenticate the user using the v2 app model. Instead of using an SDK to implement the Outlook API, it sends HTTP requests.</p>
     @if (ViewBag.Message != null)
     {
-    <p class="alert">@ViewBag.Message</p>
+    <p class="alert alert-warning">@ViewBag.Message</p>
     }
     @if (ViewBag.LoginUri != null)
     {

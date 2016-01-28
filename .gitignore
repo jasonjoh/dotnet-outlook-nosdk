@@ -49,3 +49,4 @@ bin
 obj
 .vs/dotnet-outlook-nosdk/v14/.suo
 packages
+dotnet-outlook-nosdk/App_Data/token_cache.json
