@@ -48,3 +48,4 @@ Temporary Items
 bin
 obj
 .vs/dotnet-outlook-nosdk/v14/.suo
+packages
