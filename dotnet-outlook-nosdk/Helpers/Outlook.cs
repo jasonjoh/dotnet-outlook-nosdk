@@ -94,15 +94,54 @@ namespace dotnet_outlook_nosdk.Helpers
       List<OutlookEvent> events = eventJson.Select(e => new OutlookEvent
       {
         Subject = (string)e["Subject"],
-        Organizer = (string)e["Organizer"]["EmailAddress"]["Name"],
+        Organizer = BuildOrganizerString(e["Organizer"]["EmailAddress"]),
         Start = DateTime.Parse((string)e["Start"]["DateTime"]),
         End = DateTime.Parse((string)e["End"]["DateTime"]),
-        Location = (string)e["Location"]["DisplayName"],
+        LocationDisplayName = (string)e["Location"]["DisplayName"],
+        LocationAddress = BuildAddressString(e["Location"]["Address"]),
+        LocationCoordinates = BuildCoordinatesString(e["Location"]["Coordinates"]),
         WebLink = (string)e["WebLink"],
         OnlineMeetingUrl = (string)e["OnlineMeetingUrl"]
       }).ToList();
         
       return events;
+    }
+    
+    public String BuildOrganizerString(JToken emailAddress)
+    {
+        return String.Format("{0} <{1}>",
+            (string)emailAddress["Name"] ?? "<No Name>",
+            (string)emailAddress["Address"]
+            );
+    }
+
+    public String BuildAddressString(JToken address)
+    {
+        if (address == null)
+        {
+            return "null";
+        }
+        else {
+            return String.Format("{0}, {1}, {2}, {3}, {4}",
+                (string)address["Street"] == "" ? "<No Street>" : (string)address["Street"],
+                (string)address["City"] == "" ? "<No City>" : (string)address["City"],
+                (string)address["State"] == "" ? "<No State>" : (string)address["State"],
+                (string)address["CountryOrRegion"] == "" ? "<No Country Or Region>" : (string)address["CountryOrRegion"],
+                (string)address["PostalCode"] == "" ? "<No Postal Code>" : (string)address["PostalCode"]
+                );
+        }
+    }
+
+    public String BuildCoordinatesString(JToken coordinates)
+    {
+        if (coordinates == null)
+        {
+            return "null";
+        }
+        else
+        {
+            return String.Format("{0}, {1}", (string)coordinates["Latitude"], (string)coordinates["Longitude"]);
+        }
     }
   }
 }
