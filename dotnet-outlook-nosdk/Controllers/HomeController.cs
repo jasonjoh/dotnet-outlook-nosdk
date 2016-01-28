@@ -123,8 +123,8 @@ namespace dotnet_outlook_nosdk.Controllers
       client.anchorMailbox = GetUserEmail(authContext, appId);
       ViewBag.UserName = client.anchorMailbox;
 
-      DateTime viewStart = DateTime.Now.Date.ToUniversalTime();
-      DateTime viewEnd = viewStart.AddDays(7);
+      DateTime viewStart = DateTime.Now.ToUniversalTime();
+      DateTime viewEnd = viewStart.AddHours(3);
       var result = await client.GetCalendarView(authResult.Token, client.anchorMailbox, viewStart, viewEnd);
 
       return View(result);

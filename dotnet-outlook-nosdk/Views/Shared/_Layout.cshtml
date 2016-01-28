@@ -21,9 +21,7 @@
             <div class="navbar-collapse collapse">
                 <ul class="nav navbar-nav">
                     <li>@Html.ActionLink("Home", "Index", "Home")</li>
-                    <li>@Html.ActionLink("Inbox", "Inbox", "Home")</li>
                     <li>@Html.ActionLink("Calendar", "Calendar", "Home")</li>
-                    <li>@Html.ActionLink("Contacts", "Contacts", "Home")</li>
                     @if (ViewBag.UserName != null)
                     {
                     <li>@Html.ActionLink("Logout", "Logout", "Home")</li>
