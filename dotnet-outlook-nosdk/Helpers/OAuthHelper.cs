@@ -1,11 +1,11 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using System.Web;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace dotnet_outlook_nosdk.Helpers
 {
@@ -15,14 +15,14 @@ namespace dotnet_outlook_nosdk.Helpers
     private static string tokenEndpoint = "/oauth2/v2.0/token";
 
     public string Authority { get; set; }
-    public string ClientId { get; set; }
-    public string ClientSecret { get; set; }
+    public string AppId { get; set; }
+    public string AppSecret { get; set; }
 
-    public OAuthHelper(string authority, string clientId, string clientSecret)
+    public OAuthHelper(string authority, string appId, string appSecret)
     {
       Authority = authority;
-      ClientId = clientId;
-      ClientSecret = clientSecret;
+      AppId = appId;
+      AppSecret = appSecret;
     }
 
     // Builds the authorization URL where the app sends the user to sign in
@@ -33,10 +33,10 @@ namespace dotnet_outlook_nosdk.Helpers
 
       authUrl.Query =
         "response_type=code+id_token" +
-        "&scope=openid+offline_access+" + GetEncodedScopes(scopes) +
+        "&scope=openid+offline_access+profile+" + GetEncodedScopes(scopes) +
         "&state=" + state +
         "&nonce=" + nonce + 
-        "&client_id=" + this.ClientId +
+        "&client_id=" + this.AppId +
         "&redirect_uri=" + HttpUtility.UrlEncode(redirectUri) +
         "&response_mode=form_post";
 
@@ -57,8 +57,8 @@ namespace dotnet_outlook_nosdk.Helpers
           new[] {
             new KeyValuePair<string,string>("grant_type", "authorization_code"),
             new KeyValuePair<string,string>("code", grantParameter),
-            new KeyValuePair<string,string>("client_id", this.ClientId),
-            new KeyValuePair<string,string>("client_secret", this.ClientSecret),
+            new KeyValuePair<string,string>("client_id", this.AppId),
+            new KeyValuePair<string,string>("client_secret", this.AppSecret),
             new KeyValuePair<string,string>("redirect_uri", redirectUri)
           }
         );
@@ -69,8 +69,8 @@ namespace dotnet_outlook_nosdk.Helpers
           new[] {
             new KeyValuePair<string,string>("grant_type", "refresh_token"),
             new KeyValuePair<string,string>("code", grantParameter),
-            new KeyValuePair<string,string>("client_id", this.ClientId),
-            new KeyValuePair<string,string>("client_secret", this.ClientSecret),
+            new KeyValuePair<string,string>("client_id", this.AppId),
+            new KeyValuePair<string,string>("client_secret", this.AppSecret),
             new KeyValuePair<string,string>("redirect_uri", redirectUri)
           }
         );
