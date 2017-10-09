@@ -1,4 +1,4 @@
-#Outlook REST API SDK-less Sample
+# Outlook REST API SDK-less Sample
 
 An example of calling the Outlook API without using the NuGet libraries. The NuGet libraries support the v2.0 API endpoint (and the older library supports the v1.0 endpoint) but you can't use the beta endpoint. By implementing the REST calls yourself, you can call whichever endpoint you want.
 
